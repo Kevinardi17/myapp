@@ -1,21 +1,29 @@
 // lib/auth_page.dart
 
 import 'package:flutter/material.dart';
-import 'login_page.dart'; // Akan kita buat
-import 'register_page.dart'; // Akan kita buat
+import 'login_page.dart';
+import 'register_page.dart';
 
 class AuthPage extends StatefulWidget {
-  const AuthPage({super.key});
+  // Parameter baru ditambahkan di sini untuk menerima data
+  final bool showLoginPage;
+  const AuthPage({super.key, this.showLoginPage = true});
 
   @override
   State<AuthPage> createState() => _AuthPageState();
 }
 
 class _AuthPageState extends State<AuthPage> {
-  // Secara default, tampilkan halaman login
-  bool showLoginPage = true;
+  // State diinisialisasi dari parameter yang dikirim
+  late bool showLoginPage;
 
-  // Method untuk beralih antara halaman login dan register
+  @override
+  void initState() {
+    super.initState();
+    showLoginPage = widget.showLoginPage;
+  }
+
+  // Fungsi ini tidak berubah
   void togglePages() {
     setState(() {
       showLoginPage = !showLoginPage;
