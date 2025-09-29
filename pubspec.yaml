@@ -11,8 +11,9 @@ dependencies:
   flutter:
     sdk: flutter
   
-  # Paket minimal untuk Firebase
+  # Paket untuk Firebase
   firebase_core: ^2.27.0
+  firebase_auth: ^4.17.8 # <-- TAMBAHKAN BARIS INI
 
   cupertino_icons: ^1.0.8
 

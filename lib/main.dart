@@ -1,20 +1,12 @@
-// File: lib/main.dart
+// lib/main.dart
 
 import 'package:flutter/material.dart';
-// Impor paket dasar Firebase
 import 'package:firebase_core/firebase_core.dart';
-// Impor file konfigurasi Firebase (akan dibuat otomatis)
-import 'firebase_options.dart';
+import 'auth_gate.dart'; // Impor AuthGate
 
-// Ubah main menjadi async untuk menunggu Firebase
-Future<void> main() async {
-  // Pastikan semua widget siap sebelum Firebase dijalankan
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Inisialisasi Firebase menggunakan file options
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -23,22 +15,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: Colors.white,
-        body: Center(
-          child: Text(
-            'Firebase Berhasil Terhubung!',
-            style: TextStyle(
-              fontSize: 22,
-              color: Colors.green[700],
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ),
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false, // Menghilangkan banner debug
+      home: AuthGate(), // Menggunakan AuthGate sebagai halaman utama
     );
   }
 }
-
