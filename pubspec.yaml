@@ -13,7 +13,7 @@ dependencies:
   
   # Paket untuk Firebase
   firebase_core: ^2.27.0
-  firebase_auth: ^4.17.8 # <-- TAMBAHKAN BARIS INI
+  firebase_auth: ^4.17.8 
   google_fonts: ^6.2.1
   
   cupertino_icons: ^1.0.8
