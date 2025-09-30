@@ -19,15 +19,16 @@ class _RegisterPageState extends State<RegisterPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _otpController = TextEditingController(); // Controller untuk OTP (saat ini belum fungsional)
+  final _otpController =
+      TextEditingController(); // Controller untuk OTP (saat ini belum fungsional)
 
   // Fungsi placeholder untuk logika pengiriman OTP di masa depan.
   Future<void> sendOtp() async {
     // Saat ini, hanya menampilkan pesan bahwa fitur ini belum aktif.
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-          content:
-              Text("Fitur OTP saat ini tidak aktif. Anda bisa langsung mendaftar.")),
+          content: Text(
+              "Fitur OTP saat ini tidak aktif. Anda bisa langsung mendaftar.")),
     );
   }
 
@@ -158,7 +159,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   controller: _otpController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    hintText: 'Kode OTP (Opsional)',
+                    hintText: 'Kode OTP',
                     filled: true,
                     fillColor: Colors.grey[200],
                     border: OutlineInputBorder(
@@ -210,7 +211,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     Text("Sudah punya akun?", style: GoogleFonts.poppins()),
                     const SizedBox(width: 4),
                     GestureDetector(
-                      onTap: widget.onTap, // Memanggil fungsi togglePages dari AuthPage
+                      onTap: widget
+                          .onTap, // Memanggil fungsi togglePages dari AuthPage
                       child: Text(
                         'Login sekarang',
                         style: GoogleFonts.poppins(
