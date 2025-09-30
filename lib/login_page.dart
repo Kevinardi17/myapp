@@ -14,7 +14,7 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  // Method signIn yang sudah diperbaiki
+  // Method signIn 
   Future<void> signIn() async {
     showDialog(
       context: context,
@@ -65,7 +65,7 @@ class _LoginPageState extends State<LoginPage> {
               children: [
                 // Logo dan Judul
                 Image.asset(
-                  'lib/assets/images/logo.png', // <-- PERBAIKAN: Path gambar yang benar
+                  'lib/assets/images/logo.png', // Path gambar 
                   width: 127,
                   height: 135,
                 ),

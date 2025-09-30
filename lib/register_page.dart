@@ -18,12 +18,11 @@ class _RegisterPageState extends State<RegisterPage> {
 
   // Placeholder for the OTP sending logic
   Future<void> sendOtp() async {
-    // TODO: Implement OTP sending logic using a backend service (e.g., Firebase Cloud Functions)
-    // For now, we'll just pretend an OTP was sent.
+    // For now, we'll just show a message that OTP is a dummy feature
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
           content:
-              Text("Kode OTP (dummy: 123456) telah dikirim ke email Anda.")),
+              Text("Fitur OTP saat ini tidak aktif. Anda bisa langsung mendaftar.")),
     );
   }
 
@@ -31,15 +30,6 @@ class _RegisterPageState extends State<RegisterPage> {
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Password tidak cocok!")),
-      );
-      return;
-    }
-
-    // TODO: Add OTP verification logic here before creating the user.
-    // For this example, we'll assume OTP is '123456'
-    if (_otpController.text.trim() != '123456') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Kode OTP salah.")),
       );
       return;
     }
@@ -147,7 +137,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   controller: _otpController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    hintText: 'Kode OTP',
+                    hintText: 'Kode OTP (Opsional)',
                     filled: true,
                     fillColor: Colors.grey[200],
                     border: OutlineInputBorder(
