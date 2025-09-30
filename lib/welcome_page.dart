@@ -1,9 +1,13 @@
 // lib/welcome_page.dart
 
+// Mengimpor pustaka dasar Flutter.
 import 'package:flutter/material.dart';
+// Mengimpor pustaka google_fonts untuk menggunakan font kustom.
 import 'package:google_fonts/google_fonts.dart';
+// Mengimpor AuthPage, yang berfungsi sebagai "saklar" antara halaman login dan register.
 import 'auth_page.dart'; // Halaman "saklar" login/register kita
 
+// WelcomePage adalah halaman penyambut untuk pengguna baru.
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
 
@@ -20,15 +24,17 @@ class WelcomePage extends StatelessWidget {
               children: [
                 const Spacer(flex: 2),
 
-                // Logo
+                // Logo dan Judul Aplikasi
                 Column(
                   children: [
+                    // Menampilkan gambar logo dari folder assets.
                     Image.asset(
-                      'lib/assets/images/logo.png', // <-- GANTI DENGAN NAMA FILE LOGO ANDA
+                      'lib/assets/images/logo.png', // <-- Path ke file gambar logo
                       width: 127,
                       height: 135,
                     ),
                     const SizedBox(height: 20),
+                    // Judul aplikasi dengan font kustom.
                     RichText(
                       textAlign: TextAlign.center,
                       text: TextSpan(
@@ -42,24 +48,25 @@ class WelcomePage extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
 
-                // Tulisan WELCOME!
+                // Teks sambutan "WELCOME!".
                 Text(
                   'WELCOME!',
                   style: GoogleFonts.secularOne(
-                    color: const Color(0xFF256EFB),
+                    color: const Color(0xFF256EFB), // Warna biru
                     fontSize: 48,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
                 const Spacer(flex: 2),
 
-                // Tombol Login
+                // Tombol untuk masuk (Login).
                 SizedBox(
-                  width: double.infinity,
+                  width: double.infinity, // Lebar tombol penuh
                   height: 54,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Arahkan ke halaman login/register
+                      // Ketika ditekan, navigasi ke AuthPage.
+                      // AuthPage secara default akan menampilkan halaman login.
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -84,13 +91,14 @@ class WelcomePage extends StatelessWidget {
                 ),
                 const SizedBox(height: 18),
 
-                // Tombol Register
+                // Tombol untuk mendaftar (Register).
                 SizedBox(
-                  width: double.infinity,
+                  width: double.infinity, // Lebar tombol penuh
                   height: 54,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Arahkan ke halaman login/register
+                      // Ketika ditekan, navigasi ke AuthPage.
+                      // 'showLoginPage: false' memberitahu AuthPage untuk menampilkan halaman register.
                       Navigator.push(
                         context,
                         MaterialPageRoute(

@@ -1,8 +1,12 @@
+// lib/register_page.dart
+
+// Mengimpor pustaka Firebase Authentication untuk proses pendaftaran.
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class RegisterPage extends StatefulWidget {
+  // Sama seperti LoginPage, 'onTap' adalah fungsi dari AuthPage untuk beralih halaman.
   final VoidCallback onTap;
   const RegisterPage({super.key, required this.onTap});
 
@@ -11,14 +15,15 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  // Controllers untuk setiap kolom input.
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _otpController = TextEditingController(); // Controller for OTP
+  final _otpController = TextEditingController(); // Controller untuk OTP (saat ini belum fungsional)
 
-  // Placeholder for the OTP sending logic
+  // Fungsi placeholder untuk logika pengiriman OTP di masa depan.
   Future<void> sendOtp() async {
-    // For now, we'll just show a message that OTP is a dummy feature
+    // Saat ini, hanya menampilkan pesan bahwa fitur ini belum aktif.
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
           content:
@@ -26,14 +31,17 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  // Method untuk menangani proses sign up (pendaftaran).
   Future<void> signUp() async {
+    // Pertama, periksa apakah password dan konfirmasi password cocok.
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Password tidak cocok!")),
       );
-      return;
+      return; // Hentikan proses jika tidak cocok.
     }
 
+    // Tampilkan dialog loading.
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -41,27 +49,35 @@ class _RegisterPageState extends State<RegisterPage> {
     );
 
     try {
+      // Mencoba membuat pengguna baru dengan email dan password.
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+      // Langsung logout setelah berhasil mendaftar agar pengguna diarahkan ke halaman login.
       await FirebaseAuth.instance.signOut();
 
+      // Tutup dialog loading.
       if (mounted) Navigator.pop(context);
+      // Tampilkan pesan sukses.
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Daftar Akun Berhasil Silahkan Login")),
         );
       }
+      // Panggil widget.onTap() untuk secara otomatis beralih ke halaman login.
       widget.onTap();
     } on FirebaseAuthException catch (e) {
+      // Jika terjadi error dari Firebase.
       if (!mounted) return;
-      Navigator.pop(context);
+      Navigator.pop(context); // Tutup dialog loading.
+      // Jika error karena email sudah terdaftar.
       if (e.code == 'email-already-in-use') {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Akun Anda Sudah Terdaftar")),
         );
       } else {
+        // Untuk error lainnya.
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.message ?? "Registrasi Gagal")),
         );
@@ -71,6 +87,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Tampilan UI-nya sangat mirip dengan LoginPage, hanya berbeda di beberapa teks dan jumlah kolom input.
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -92,6 +109,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 Image.asset('lib/assets/images/logo.png',
                     width: 127, height: 135),
                 const SizedBox(height: 50),
+                // Kolom Input Email
                 TextField(
                   controller: _emailController,
                   decoration: InputDecoration(
@@ -105,6 +123,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 const SizedBox(height: 10),
+                // Kolom Input Password
                 TextField(
                   controller: _passwordController,
                   obscureText: true,
@@ -119,6 +138,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 const SizedBox(height: 10),
+                // Kolom Input Konfirmasi Password
                 TextField(
                   controller: _confirmPasswordController,
                   obscureText: true,
@@ -133,6 +153,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 const SizedBox(height: 10),
+                // Kolom Input OTP (Opsional)
                 TextField(
                   controller: _otpController,
                   keyboardType: TextInputType.number,
@@ -147,6 +168,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 const SizedBox(height: 10),
+                // Teks untuk mengirim OTP
                 GestureDetector(
                   onTap: sendOtp,
                   child: Text(
@@ -158,11 +180,12 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 const SizedBox(height: 30),
+                // Tombol Daftar
                 SizedBox(
                   width: double.infinity,
                   height: 54,
                   child: ElevatedButton(
-                    onPressed: signUp,
+                    onPressed: signUp, // Memanggil fungsi signUp saat ditekan
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF256EFB),
                       shape: RoundedRectangleBorder(
@@ -180,13 +203,14 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 const SizedBox(height: 30),
+                // Teks untuk beralih ke halaman Login
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text("Sudah punya akun?", style: GoogleFonts.poppins()),
                     const SizedBox(width: 4),
                     GestureDetector(
-                      onTap: widget.onTap,
+                      onTap: widget.onTap, // Memanggil fungsi togglePages dari AuthPage
                       child: Text(
                         'Login sekarang',
                         style: GoogleFonts.poppins(
