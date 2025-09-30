@@ -12,8 +12,3 @@
   - Ghea Chandra Surawan, M.Pd.
 
 ---
-
-## 🛠️ Cara Menjalankan
-1. Clone repositori ini ke perangkat:
-   ```bash
-   git clone https://github.com/username/project_mobile_programming.git
