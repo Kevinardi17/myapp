@@ -14,6 +14,7 @@ class SchedulePage extends StatefulWidget {
 class _SchedulePageState extends State<SchedulePage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  bool _isEditMode = false;
 
   Stream<QuerySnapshot> _getSchedules() {
     final User? user = _auth.currentUser;
@@ -33,6 +34,17 @@ class _SchedulePageState extends State<SchedulePage> {
         title: const Text("Jadwal"),
         backgroundColor: const Color(0xFF256EFB),
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: Icon(_isEditMode ? Icons.check : Icons.edit),
+            tooltip: _isEditMode ? 'Selesai Edit' : 'Mode Edit',
+            onPressed: () {
+              setState(() {
+                _isEditMode = !_isEditMode;
+              });
+            },
+          ),
+        ],
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _getSchedules(),
@@ -49,7 +61,7 @@ class _SchedulePageState extends State<SchedulePage> {
             );
           }
 
-          final schedules = _groupSchedulesByDay(snapshot.data!.docs);
+          final schedules = _groupAndSortSchedules(snapshot.data!.docs);
           final days = schedules.keys.toList()
             ..sort((a, b) => _dayOrder[a]! - _dayOrder[b]!);
 
@@ -59,59 +71,13 @@ class _SchedulePageState extends State<SchedulePage> {
             itemBuilder: (context, index) {
               final day = days[index];
               final daySchedules = schedules[day]!;
-              return Card(
-                margin: const EdgeInsets.only(bottom: 16.0),
-                elevation: 4.0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        day,
-                        style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Divider(height: 20, thickness: 1),
-                      ...daySchedules.map((schedule) {
-                        return ListTile(
-                          title: Text(
-                            schedule['nama_matkul'],
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          subtitle: Text(
-                            '${schedule['jam_mulai']} - ${schedule['jam_selesai']}\n${schedule['lokasi']}',
-                            style: GoogleFonts.poppins(),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon:
-                                    const Icon(Icons.edit, color: Colors.blue),
-                                onPressed: () =>
-                                    _showScheduleDialog(schedule: schedule),
-                              ),
-                              IconButton(
-                                icon:
-                                    const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _confirmDelete(schedule.id),
-                              ),
-                            ],
-                          ),
-                          onTap: () => _showScheduleDetails(schedule),
-                        );
-                      }).toList(),
-                    ],
-                  ),
-                ),
+              return ScheduleDayCard(
+                day: day,
+                schedules: daySchedules,
+                isEditMode: _isEditMode,
+                showScheduleDetails: _showScheduleDetails,
+                confirmDelete: _confirmDelete,
+                showScheduleDialog: _showScheduleDialog,
               );
             },
           );
@@ -125,7 +91,7 @@ class _SchedulePageState extends State<SchedulePage> {
     );
   }
 
-  Map<String, List<DocumentSnapshot>> _groupSchedulesByDay(
+  Map<String, List<DocumentSnapshot>> _groupAndSortSchedules(
       List<DocumentSnapshot> docs) {
     final Map<String, List<DocumentSnapshot>> schedules = {};
     for (var doc in docs) {
@@ -136,6 +102,17 @@ class _SchedulePageState extends State<SchedulePage> {
         schedules[day] = [doc];
       }
     }
+
+    schedules.forEach((day, scheduleList) {
+      scheduleList.sort((a, b) {
+        final timeA = _timeOfDayFromString(a['jam_mulai']);
+        final timeB = _timeOfDayFromString(b['jam_mulai']);
+        final double aTime = timeA.hour + timeA.minute / 60.0;
+        final double bTime = timeB.hour + timeB.minute / 60.0;
+        return aTime.compareTo(bTime);
+      });
+    });
+
     return schedules;
   }
 
@@ -356,16 +333,152 @@ class _SchedulePageState extends State<SchedulePage> {
 
   TimeOfDay _timeOfDayFromString(String timeString) {
     try {
-      // Prioritaskan parsing format 24-jam (misal: "14:30"), format baru yang konsisten.
       return TimeOfDay.fromDateTime(DateFormat.Hm().parse(timeString));
     } catch (_) {
-      // Jika gagal, coba parsing format 12-jam (misal: "2:30 PM"), untuk data lama.
       try {
         return TimeOfDay.fromDateTime(DateFormat.jm().parse(timeString));
       } catch (e) {
-        // Jika keduanya gagal, kembalikan nilai default untuk mencegah crash.
         return const TimeOfDay(hour: 0, minute: 0);
       }
     }
+  }
+}
+
+// Widget baru yang Stateful untuk setiap kartu hari
+class ScheduleDayCard extends StatefulWidget {
+  final String day;
+  final List<DocumentSnapshot> schedules;
+  final bool isEditMode;
+  final Function(DocumentSnapshot) showScheduleDetails;
+  final Function(String) confirmDelete;
+  final Function({DocumentSnapshot? schedule}) showScheduleDialog;
+
+  const ScheduleDayCard({
+    super.key,
+    required this.day,
+    required this.schedules,
+    required this.isEditMode,
+    required this.showScheduleDetails,
+    required this.confirmDelete,
+    required this.showScheduleDialog,
+  });
+
+  @override
+  State<ScheduleDayCard> createState() => _ScheduleDayCardState();
+}
+
+class _ScheduleDayCardState extends State<ScheduleDayCard> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16.0),
+      elevation: 4.0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isExpanded = !_isExpanded;
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    widget.day,
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Icon(_isExpanded ? Icons.expand_less : Icons.expand_more),
+                ],
+              ),
+            ),
+          ),
+          const Divider(height: 1, thickness: 1),
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 300),
+            crossFadeState: _isExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            firstChild: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: _buildCollapsedView(),
+            ),
+            secondChild: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: _buildExpandedView(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCollapsedView() {
+    return Column(
+      children: [
+        _buildScheduleTile(widget.schedules.first),
+        if (widget.schedules.length > 1)
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _isExpanded = true;
+              });
+            },
+            child:
+                Text('Lihat ${widget.schedules.length - 1} jadwal lainnya...'),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildExpandedView() {
+    return Column(
+      children: widget.schedules
+          .map((schedule) => _buildScheduleTile(schedule))
+          .toList(),
+    );
+  }
+
+  ListTile _buildScheduleTile(DocumentSnapshot schedule) {
+    return ListTile(
+      title: Text(
+        schedule['nama_matkul'],
+        style: GoogleFonts.poppins(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: Text(
+        '${schedule['jam_mulai']} - ${schedule['jam_selesai']}\n${schedule['lokasi']}',
+        style: GoogleFonts.poppins(),
+      ),
+      trailing: widget.isEditMode
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blue),
+                  onPressed: () =>
+                      widget.showScheduleDialog(schedule: schedule),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () => widget.confirmDelete(schedule.id),
+                ),
+              ],
+            )
+          : null,
+      onTap: () => widget.showScheduleDetails(schedule),
+    );
   }
 }
