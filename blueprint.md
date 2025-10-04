@@ -19,5 +19,10 @@ Aplikasi ini adalah asisten studi yang membantu mahasiswa mengelola jadwal kulia
 
 ## Tugas Saat Ini
 
-*   **Integrasi Firebase Firestore untuk Halaman Jadwal:** Mengintegrasikan halaman jadwal dengan Firebase Firestore untuk mengelola data jadwal.
-
+*   **Implementasi Halaman Jadwal:**
+    *   Mengambil dan menampilkan data jadwal dari Firestore.
+    *   Mengelompokkan jadwal berdasarkan hari dalam `Card`.
+    *   Menambahkan fungsionalitas untuk membuat, membaca, memperbarui, dan menghapus (CRUD) jadwal.
+    *   Menggunakan `Dropdown` untuk pemilihan hari dan `TimePicker` untuk pemilihan waktu.
+    *   Menambahkan kolom "Lokasi".
+    *   Membuat antarmuka pengguna yang modern dan menarik.

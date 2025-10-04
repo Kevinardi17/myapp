@@ -1,15 +1,9 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Aturan untuk koleksi 'Jadwal'
-    match /Jadwal/{jadwalId} {
-      // Pengguna dapat membuat jadwal jika ID pengguna mereka cocok dengan yang ada di data baru
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-
-      // Pengguna dapat membaca, memperbarui, atau menghapus jadwal mereka sendiri
-      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    match /Jadwal/{document=**} {
+      // Allow users to read, create, update, and delete their own schedules
+      allow read, create, update, delete: if request.auth != null && request.auth.uid == request.resource.data.userId;
     }
   }
 }
