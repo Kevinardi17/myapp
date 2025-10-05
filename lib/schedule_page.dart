@@ -188,15 +188,15 @@ class _SchedulePageState extends State<SchedulePage> {
   }
 
   void _showScheduleDialog({DocumentSnapshot? schedule}) {
-    final _formKey = GlobalKey<FormState>();
-    String? _namaMatkul = schedule?['nama_matkul'];
-    String? _hari = schedule?['hari'];
-    TimeOfDay? _jamMulai =
+    final formKey = GlobalKey<FormState>();
+    String? namaMatkul = schedule?['nama_matkul'];
+    String? hari = schedule?['hari'];
+    TimeOfDay? jamMulai =
         schedule != null ? _timeOfDayFromString(schedule['jam_mulai']) : null;
-    TimeOfDay? _jamSelesai =
+    TimeOfDay? jamSelesai =
         schedule != null ? _timeOfDayFromString(schedule['jam_selesai']) : null;
-    String? _lokasi = schedule?['lokasi'];
-    String? _namaDosen = schedule?['nama_dosen'];
+    String? lokasi = schedule?['lokasi'];
+    String? namaDosen = schedule?['nama_dosen'];
 
     showDialog(
       context: context,
@@ -206,21 +206,21 @@ class _SchedulePageState extends State<SchedulePage> {
           content: StatefulBuilder(
             builder: (BuildContext context, StateSetter setDialogState) {
               return Form(
-                key: _formKey,
+                key: formKey,
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       TextFormField(
-                        initialValue: _namaMatkul,
+                        initialValue: namaMatkul,
                         decoration: const InputDecoration(
                             labelText: 'Nama Mata Kuliah'),
                         validator: (value) =>
                             value!.isEmpty ? 'Tidak boleh kosong' : null,
-                        onSaved: (value) => _namaMatkul = value,
+                        onSaved: (value) => namaMatkul = value,
                       ),
                       DropdownButtonFormField<String>(
-                        value: _hari,
+                        initialValue: hari,
                         decoration: const InputDecoration(labelText: 'Hari'),
                         items: _dayOrder.keys
                             .map((day) =>
@@ -228,7 +228,7 @@ class _SchedulePageState extends State<SchedulePage> {
                             .toList(),
                         onChanged: (value) {
                           setDialogState(() {
-                            _hari = value;
+                            hari = value;
                           });
                         },
                         validator: (value) =>
@@ -237,15 +237,15 @@ class _SchedulePageState extends State<SchedulePage> {
                       ListTile(
                         title: const Text('Jam Mulai'),
                         subtitle:
-                            Text(_jamMulai?.format(context) ?? 'Pilih waktu'),
+                            Text(jamMulai?.format(context) ?? 'Pilih waktu'),
                         onTap: () async {
                           final time = await showTimePicker(
                             context: context,
-                            initialTime: _jamMulai ?? TimeOfDay.now(),
+                            initialTime: jamMulai ?? TimeOfDay.now(),
                           );
                           if (time != null) {
                             setDialogState(() {
-                              _jamMulai = time;
+                              jamMulai = time;
                             });
                           }
                         },
@@ -253,31 +253,31 @@ class _SchedulePageState extends State<SchedulePage> {
                       ListTile(
                         title: const Text('Jam Selesai'),
                         subtitle:
-                            Text(_jamSelesai?.format(context) ?? 'Pilih waktu'),
+                            Text(jamSelesai?.format(context) ?? 'Pilih waktu'),
                         onTap: () async {
                           final time = await showTimePicker(
                             context: context,
-                            initialTime: _jamSelesai ?? TimeOfDay.now(),
+                            initialTime: jamSelesai ?? TimeOfDay.now(),
                           );
                           if (time != null) {
                             setDialogState(() {
-                              _jamSelesai = time;
+                              jamSelesai = time;
                             });
                           }
                         },
                       ),
                       TextFormField(
-                        initialValue: _lokasi,
+                        initialValue: lokasi,
                         decoration: const InputDecoration(labelText: 'Lokasi'),
                         validator: (value) =>
                             value!.isEmpty ? 'Tidak boleh kosong' : null,
-                        onSaved: (value) => _lokasi = value,
+                        onSaved: (value) => lokasi = value,
                       ),
                       TextFormField(
-                        initialValue: _namaDosen,
+                        initialValue: namaDosen,
                         decoration: const InputDecoration(
                             labelText: 'Nama Dosen (Opsional)'),
-                        onSaved: (value) => _namaDosen = value,
+                        onSaved: (value) => namaDosen = value,
                       ),
                     ],
                   ),
@@ -292,24 +292,24 @@ class _SchedulePageState extends State<SchedulePage> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  _formKey.currentState!.save();
+                if (formKey.currentState!.validate()) {
+                  formKey.currentState!.save();
                   final User? user = _auth.currentUser;
                   final localizations = MaterialLocalizations.of(context);
                   if (user != null &&
-                      _hari != null &&
-                      _jamMulai != null &&
-                      _jamSelesai != null) {
+                      hari != null &&
+                      jamMulai != null &&
+                      jamSelesai != null) {
                     final data = {
                       'userId': user.uid,
-                      'nama_matkul': _namaMatkul,
-                      'hari': _hari,
-                      'jam_mulai': localizations.formatTimeOfDay(_jamMulai!,
+                      'nama_matkul': namaMatkul,
+                      'hari': hari,
+                      'jam_mulai': localizations.formatTimeOfDay(jamMulai!,
                           alwaysUse24HourFormat: true),
-                      'jam_selesai': localizations.formatTimeOfDay(_jamSelesai!,
+                      'jam_selesai': localizations.formatTimeOfDay(jamSelesai!,
                           alwaysUse24HourFormat: true),
-                      'lokasi': _lokasi,
-                      'nama_dosen': _namaDosen,
+                      'lokasi': lokasi,
+                      'nama_dosen': namaDosen,
                     };
                     if (schedule == null) {
                       _firestore.collection('Jadwal').add(data);
