@@ -35,7 +35,8 @@ class HomePage extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: SingleChildScrollView( // Membuat konten bisa di-scroll
+        child: SingleChildScrollView(
+          // Membuat konten bisa di-scroll
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start, // Rata kiri
             children: [
@@ -105,7 +106,8 @@ class HomePage extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10), // Sudut melengkung
       ),
-      child: InkWell( // Memberi efek "ripple" saat disentuh
+      child: InkWell(
+        // Memberi efek "ripple" saat disentuh
         onTap: () {
           // Aksi yang dijalankan saat Card diklik.
           Navigator.push(
@@ -115,11 +117,13 @@ class HomePage extends StatelessWidget {
         },
         child: Padding(
           padding: const EdgeInsets.all(20.0),
-          child: Row( // Menata ikon dan teks secara horizontal
+          child: Row(
+            // Menata ikon dan teks secara horizontal
             children: [
               Icon(icon, size: 40, color: const Color(0xFF256EFB)),
               const SizedBox(width: 20),
-              Expanded( // Mengambil sisa ruang yang tersedia
+              Expanded(
+                // Mengambil sisa ruang yang tersedia
                 child: Text(
                   title,
                   style: GoogleFonts.poppins(
@@ -128,7 +132,8 @@ class HomePage extends StatelessWidget {
                   ),
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, size: 20, color: Colors.grey), // Ikon panah
+              const Icon(Icons.arrow_forward_ios,
+                  size: 20, color: Colors.grey), // Ikon panah
             ],
           ),
         ),

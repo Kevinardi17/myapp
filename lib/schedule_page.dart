@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'dart:developer' as developer;
 
 class SchedulePage extends StatefulWidget {
   const SchedulePage({super.key});
@@ -18,12 +19,14 @@ class _SchedulePageState extends State<SchedulePage> {
 
   Stream<QuerySnapshot> _getSchedules() {
     final User? user = _auth.currentUser;
+    developer.log('Getting schedules for user: ${user?.uid}', name: 'SchedulePage');
     if (user != null) {
       return _firestore
-          .collection('Jadwal')
+          .collection('schedule')
           .where('userId', isEqualTo: user.uid)
           .snapshots();
     }
+    developer.log('No user logged in, returning empty stream.', name: 'SchedulePage');
     return const Stream.empty();
   }
 
@@ -49,18 +52,46 @@ class _SchedulePageState extends State<SchedulePage> {
       body: StreamBuilder<QuerySnapshot>(
         stream: _getSchedules(),
         builder: (context, snapshot) {
+          developer.log('StreamBuilder state: ${snapshot.connectionState}', name: 'SchedulePage');
+          if (snapshot.hasError) {
+            developer.log('StreamBuilder error: ${snapshot.error}', name: 'SchedulePage', error: snapshot.error);
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
           if (snapshot.connectionState == ConnectionState.waiting) {
+            developer.log('StreamBuilder is waiting for data...', name: 'SchedulePage');
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            developer.log('No schedule data found for the user.', name: 'SchedulePage');
             return Center(
-              child: Text(
-                "Belum ada jadwal",
-                style: GoogleFonts.poppins(fontSize: 18),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.schedule,
+                      size: 80,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      "Belum ada jadwal",
+                      style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      "Tambahkan jadwal kuliahmu dengan menekan tombol + di bawah.",
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
               ),
             );
           }
 
+          developer.log('StreamBuilder has data with ${snapshot.data!.docs.length} documents.', name: 'SchedulePage');
           final schedules = _groupAndSortSchedules(snapshot.data!.docs);
           final days = schedules.keys.toList()
             ..sort((a, b) => _dayOrder[a]! - _dayOrder[b]!);
@@ -176,7 +207,7 @@ class _SchedulePageState extends State<SchedulePage> {
             ),
             TextButton(
               onPressed: () {
-                _firestore.collection('Jadwal').doc(docId).delete();
+                _firestore.collection('schedule').doc(docId).delete();
                 Navigator.of(context).pop();
               },
               child: const Text('Hapus', style: TextStyle(color: Colors.red)),
@@ -292,14 +323,22 @@ class _SchedulePageState extends State<SchedulePage> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (formKey.currentState!.validate()) {
+                 if (formKey.currentState!.validate()) {
                   formKey.currentState!.save();
+
+                  if (jamMulai == null || jamSelesai == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Harap pilih jam mulai dan selesai.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
                   final User? user = _auth.currentUser;
                   final localizations = MaterialLocalizations.of(context);
-                  if (user != null &&
-                      hari != null &&
-                      jamMulai != null &&
-                      jamSelesai != null) {
+                  if (user != null) {
                     final data = {
                       'userId': user.uid,
                       'nama_matkul': namaMatkul,
@@ -312,10 +351,10 @@ class _SchedulePageState extends State<SchedulePage> {
                       'nama_dosen': namaDosen,
                     };
                     if (schedule == null) {
-                      _firestore.collection('Jadwal').add(data);
+                      _firestore.collection('schedule').add(data);
                     } else {
                       _firestore
-                          .collection('Jadwal')
+                          .collection('schedule')
                           .doc(schedule.id)
                           .update(data);
                     }
