@@ -46,7 +46,7 @@ class FinancePage extends StatefulWidget {
 class FinancePageState extends State<FinancePage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final String _collection = 'transactions';
+  final String _collection = 'transaksi';
 
   @override
   void initState() {

@@ -1,7 +1,7 @@
 {
   "indexes": [
     {
-      "collectionGroup": "transactions",
+      "collectionGroup": "transaksi",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -15,7 +15,7 @@
       ]
     },
     {
-      "collectionGroup": "schedule",
+      "collectionGroup": "jadwal",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -25,6 +25,20 @@
         {
           "fieldPath": "dayIndex",
           "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "ToDo_Item",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
         }
       ]
     }
