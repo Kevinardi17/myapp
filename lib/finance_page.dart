@@ -47,6 +47,7 @@ class FinancePageState extends State<FinancePage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final String _collection = 'transaksi';
+  bool _isEditMode = false;
 
   @override
   void initState() {
@@ -65,6 +66,15 @@ class FinancePageState extends State<FinancePage> {
       'date': Timestamp.fromDate(date),
       'isIncome': isIncome,
       'userId': user.uid,
+    });
+  }
+
+  Future<void> _updateTransaction(
+      String id, double amount, String description, DateTime date) async {
+    await _firestore.collection(_collection).doc(id).update({
+      'amount': amount,
+      'description': description,
+      'date': Timestamp.fromDate(date),
     });
   }
 
@@ -144,17 +154,22 @@ class FinancePageState extends State<FinancePage> {
     );
   }
 
-  Future<void> _showTransactionDialog({bool isIncome = true}) async {
+  Future<void> _showTransactionDialog(
+      {Transaction? transaction, bool isIncome = true}) async {
     final formKey = GlobalKey<FormState>();
-    final amountController = TextEditingController();
-    final descriptionController = TextEditingController();
-    DateTime selectedDate = DateTime.now();
+    final amountController =
+        TextEditingController(text: transaction?.amount.toString() ?? '');
+    final descriptionController =
+        TextEditingController(text: transaction?.description ?? '');
+    DateTime selectedDate = transaction?.date ?? DateTime.now();
 
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text(isIncome ? 'Tambah Pemasukan' : 'Tambah Pengeluaran'),
+          title: Text(transaction == null
+              ? (isIncome ? 'Tambah Pemasukan' : 'Tambah Pengeluaran')
+              : 'Ubah Transaksi'),
           content: Form(
             key: formKey,
             child: Column(
@@ -235,8 +250,13 @@ class FinancePageState extends State<FinancePage> {
     );
 
     if (result != null) {
-      await _addTransaction(
-          result['amount'], result['description'], result['date'], isIncome);
+      if (transaction == null) {
+        await _addTransaction(
+            result['amount'], result['description'], result['date'], isIncome);
+      } else {
+        await _updateTransaction(transaction.id, result['amount'],
+            result['description'], result['date']);
+      }
     }
   }
 
@@ -271,6 +291,16 @@ class FinancePageState extends State<FinancePage> {
             title: const Text("Manajemen Keuangan"),
             backgroundColor: const Color(0xFF256EFB),
             foregroundColor: Colors.white,
+            actions: [
+              IconButton(
+                icon: Icon(_isEditMode ? Icons.done : Icons.edit),
+                onPressed: () {
+                  setState(() {
+                    _isEditMode = !_isEditMode;
+                  });
+                },
+              ),
+            ],
           ),
           body: StreamBuilder<QuerySnapshot>(
             stream: _firestore
@@ -287,14 +317,11 @@ class FinancePageState extends State<FinancePage> {
                 return Center(
                     child: Text('Error: ${transactionSnapshot.error}'));
               }
-              if (!transactionSnapshot.hasData ||
-                  transactionSnapshot.data!.docs.isEmpty) {
-                return _buildEmptyState();
-              }
 
-              final transactions = transactionSnapshot.data!.docs
-                  .map((doc) => Transaction.fromFirestore(doc))
-                  .toList();
+              final transactions = transactionSnapshot.data?.docs
+                      .map((doc) => Transaction.fromFirestore(doc))
+                      .toList() ??
+                  [];
 
               double totalIncome = transactions
                   .where((t) => t.isIncome)
@@ -307,15 +334,26 @@ class FinancePageState extends State<FinancePage> {
               return Column(
                 children: [
                   _buildSummaryCard(totalIncome, totalExpense, balance),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      'Riwayat Transaksi',
-                      style: GoogleFonts.poppins(
-                          fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
+                  Expanded(
+                    child: transactions.isEmpty
+                        ? _buildEmptyState()
+                        : Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Text(
+                                  'Riwayat Transaksi',
+                                  style: GoogleFonts.poppins(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              Expanded(
+                                  child: _buildGroupedTransactionList(
+                                      transactions)),
+                            ],
+                          ),
                   ),
-                  Expanded(child: _buildGroupedTransactionList(transactions)),
                 ],
               );
             },
@@ -403,10 +441,6 @@ class FinancePageState extends State<FinancePage> {
   }
 
   Widget _buildGroupedTransactionList(List<Transaction> transactions) {
-    if (transactions.isEmpty) {
-      return _buildEmptyState();
-    }
-
     final Map<String, List<Transaction>> groupedTransactions = {};
     for (var tx in transactions) {
       String monthYear = DateFormat('MMMM yyyy', 'id_ID').format(tx.date);
@@ -447,26 +481,31 @@ class FinancePageState extends State<FinancePage> {
                   currencyFormatter.format(tx.amount);
 
               return ListTile(
-                title: Text(tx.description, style: GoogleFonts.poppins()),
-                subtitle: Text(dateFormatter.format(tx.date),
-                    style: GoogleFonts.poppins()),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      amountString,
-                      style: GoogleFonts.poppins(
-                        color: isIncome ? Colors.green : Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.grey),
-                      onPressed: () => _deleteTransaction(tx.id),
-                    ),
-                  ],
-                ),
-              );
+                  title: Text(tx.description, style: GoogleFonts.poppins()),
+                  subtitle: Text(dateFormatter.format(tx.date),
+                      style: GoogleFonts.poppins()),
+                  trailing: _isEditMode
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () => _showTransactionDialog(
+                                  transaction: tx, isIncome: tx.isIncome),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _deleteTransaction(tx.id),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          amountString,
+                          style: GoogleFonts.poppins(
+                            color: isIncome ? Colors.green : Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ));
             }).toList(),
           ),
         );

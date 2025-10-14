@@ -68,106 +68,117 @@ class TodoPageState extends State<TodoPage> {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text(task == null ? 'Tambah Tugas' : 'Ubah Tugas'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(labelText: 'Judul Tugas'),
-                ),
-                DropdownButtonFormField<String>(
-                  initialValue: category,
-                  decoration: const InputDecoration(labelText: 'Kategori'),
-                  items: ['Kuliah', 'Pribadi', 'Wishlist']
-                      .map((label) => DropdownMenuItem(
-                            value: label,
-                            child: Text(label),
-                          ))
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      category = value!;
-                    });
-                  },
-                ),
-                if (category == 'Kuliah')
-                  ListTile(
-                    title: Text(deadline == null
-                        ? 'Pilih Tenggat Waktu'
-                        : DateFormat('dd/MM/yyyy HH:mm').format(deadline!)),
-                    trailing: const Icon(Icons.calendar_today),
-                    onTap: () async {
-                      final pickedDate = await showDatePicker(
-                        context: context,
-                        initialDate: deadline ?? DateTime.now(),
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime(2101),
-                      );
-                      if (pickedDate != null) {
-                        if (!mounted) return;
-                        final pickedTime = await showTimePicker(
-                          // ignore: use_build_context_synchronously
-                          context: context,
-                          initialTime: TimeOfDay.fromDateTime(
-                              deadline ?? DateTime.now()),
-                        );
-                        if (pickedTime != null) {
-                          setState(() {
-                            deadline = DateTime(
-                              pickedDate.year,
-                              pickedDate.month,
-                              pickedDate.day,
-                              pickedTime.hour,
-                              pickedTime.minute,
-                            );
-                          });
-                        }
-                      }
+        return StatefulBuilder(builder: (context, setState) {
+          String dialogTitle = task == null
+              ? (category == 'Wishlist' ? 'Tambah Wishlist' : 'Tambah Tugas')
+              : 'Ubah Tugas';
+          String titleLabel = category == 'Wishlist' ? 'Judul' : 'Judul Tugas';
+          String deadlineText =
+              category == 'Wishlist' ? 'Waktu' : 'Pilih Tenggat Waktu';
+
+          return AlertDialog(
+            title: Text(dialogTitle),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(labelText: titleLabel),
+                  ),
+                  DropdownButtonFormField<String>(
+                    initialValue: category,
+                    decoration: const InputDecoration(labelText: 'Kategori'),
+                    items: ['Kuliah', 'Pribadi', 'Wishlist']
+                        .map((label) => DropdownMenuItem(
+                              value: label,
+                              child: Text(label),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        category = value!;
+                      });
                     },
                   ),
-                TextField(
-                  controller: descriptionController,
-                  decoration:
-                      const InputDecoration(labelText: 'Deskripsi (Opsional)'),
-                ),
-              ],
+                  if (category != 'Pribadi')
+                    ListTile(
+                      title: Text(deadline == null
+                          ? deadlineText
+                          : DateFormat('dd/MM/yyyy HH:mm').format(deadline!)),
+                      trailing: const Icon(Icons.calendar_today),
+                      onTap: () async {
+                        final pickedDate = await showDatePicker(
+                          context: context,
+                          initialDate: deadline ?? DateTime.now(),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime(2101),
+                        );
+                        if (pickedDate != null) {
+                          if (!mounted) return;
+                          final pickedTime = await showTimePicker(
+                            // ignore: use_build_context_synchronously
+                            context: context,
+                            initialTime: TimeOfDay.fromDateTime(
+                                deadline ?? DateTime.now()),
+                          );
+                          if (pickedTime != null) {
+                            setState(() {
+                              deadline = DateTime(
+                                pickedDate.year,
+                                pickedDate.month,
+                                pickedDate.day,
+                                pickedTime.hour,
+                                pickedTime.minute,
+                              );
+                            });
+                          }
+                        }
+                      },
+                    ),
+                  TextField(
+                    controller: descriptionController,
+                    decoration: const InputDecoration(
+                        labelText: 'Deskripsi (Opsional)'),
+                  ),
+                ],
+              ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (titleController.text.isNotEmpty) {
-                  if (task == null) {
-                    _firestore.collection('ToDo_Item').add({
-                      'userId': _user!.uid,
-                      'judul': titleController.text,
-                      'kategori': category,
-                      'tenggat_waktu': deadline,
-                      'deskripsi': descriptionController.text,
-                      'status_selesai': false,
-                    });
-                  } else {
-                    _firestore.collection('ToDo_Item').doc(task.id).update({
-                      'judul': titleController.text,
-                      'kategori': category,
-                      'tenggat_waktu': deadline,
-                      'deskripsi': descriptionController.text,
-                    });
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (titleController.text.isNotEmpty) {
+                    final deadlineToSave =
+                        category == 'Pribadi' ? null : deadline;
+                    if (task == null) {
+                      _firestore.collection('ToDo_Item').add({
+                        'userId': _user!.uid,
+                        'judul': titleController.text,
+                        'kategori': category,
+                        'tenggat_waktu': deadlineToSave,
+                        'deskripsi': descriptionController.text,
+                        'status_selesai': false,
+                      });
+                    } else {
+                      _firestore.collection('ToDo_Item').doc(task.id).update({
+                        'judul': titleController.text,
+                        'kategori': category,
+                        'tenggat_waktu': deadlineToSave,
+                        'deskripsi': descriptionController.text,
+                      });
+                    }
+                    Navigator.pop(context);
                   }
-                  Navigator.pop(context);
-                }
-              },
-              child: Text(task == null ? 'Tambah' : 'Simpan'),
-            ),
-          ],
-        );
+                },
+                child: Text(task == null ? 'Tambah' : 'Simpan'),
+              ),
+            ],
+          );
+        });
       },
     );
   }
