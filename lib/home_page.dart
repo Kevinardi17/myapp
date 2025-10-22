@@ -5,17 +5,20 @@ import 'schedule_page.dart';
 import 'todo_page.dart';
 import 'finance_page.dart';
 
+// Widget untuk halaman utama atau beranda aplikasi.
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // AppBar di bagian atas halaman.
       appBar: AppBar(
         title: const Text("Beranda"),
         backgroundColor: const Color(0xFF256EFB),
         foregroundColor: Colors.white,
         actions: [
+          // Tombol ikon untuk navigasi ke halaman profil.
           IconButton(
             onPressed: () {
               Navigator.push(
@@ -27,12 +30,14 @@ class HomePage extends StatelessWidget {
           ),
         ],
       ),
+      // Konten utama halaman.
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Teks sambutan.
               Text(
                 "Selamat Datang!",
                 style: GoogleFonts.poppins(
@@ -42,6 +47,7 @@ class HomePage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
+              // Teks instruksi.
               Text(
                 "Pilih menu di bawah untuk melanjutkan.",
                 style: GoogleFonts.poppins(
@@ -50,6 +56,7 @@ class HomePage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 30),
+              // Kartu menu untuk navigasi ke halaman Jadwal.
               _buildMenuItemCard(
                 context,
                 icon: Icons.calendar_today,
@@ -57,6 +64,7 @@ class HomePage extends StatelessWidget {
                 destination: const SchedulePage(),
               ),
               const SizedBox(height: 15),
+              // Kartu menu untuk navigasi ke halaman To-Do List.
               _buildMenuItemCard(
                 context,
                 icon: Icons.list_alt,
@@ -64,6 +72,7 @@ class HomePage extends StatelessWidget {
                 destination: const TodoPage(),
               ),
               const SizedBox(height: 15),
+              // Kartu menu untuk navigasi ke halaman Manajemen Keuangan.
               _buildMenuItemCard(
                 context,
                 icon: Icons.account_balance_wallet,
@@ -77,6 +86,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
+  // Widget helper untuk membangun setiap kartu menu.
   Widget _buildMenuItemCard(
     BuildContext context, {
     required IconData icon,
@@ -89,6 +99,7 @@ class HomePage extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: InkWell(
+        // Aksi ketika kartu disentuh, yaitu navigasi ke halaman tujuan.
         onTap: () {
           Navigator.push(
             context,
@@ -100,8 +111,10 @@ class HomePage extends StatelessWidget {
           padding: const EdgeInsets.all(20.0),
           child: Row(
             children: [
+              // Ikon untuk menu.
               Icon(icon, size: 40, color: const Color(0xFF256EFB)),
               const SizedBox(width: 20),
+              // Judul menu.
               Expanded(
                 child: Text(
                   title,
@@ -111,6 +124,7 @@ class HomePage extends StatelessWidget {
                   ),
                 ),
               ),
+              // Ikon panah sebagai indikator.
               const Icon(Icons.arrow_forward_ios, size: 20, color: Colors.grey),
             ],
           ),

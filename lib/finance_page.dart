@@ -5,7 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-// Transaction model
+// Model untuk merepresentasikan satu transaksi.
 class Transaction {
   final String id;
   final double amount;
@@ -23,6 +23,7 @@ class Transaction {
     required this.userId,
   });
 
+  // Factory constructor untuk membuat instance Transaction dari data Firestore.
   factory Transaction.fromFirestore(DocumentSnapshot doc) {
     Map data = doc.data() as Map<String, dynamic>;
     return Transaction(
@@ -36,6 +37,7 @@ class Transaction {
   }
 }
 
+// Widget utama untuk halaman manajemen keuangan.
 class FinancePage extends StatefulWidget {
   const FinancePage({super.key});
 
@@ -44,31 +46,35 @@ class FinancePage extends StatefulWidget {
 }
 
 class FinancePageState extends State<FinancePage> {
+  // Instance untuk berinteraksi dengan Firestore dan Authentication.
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final String _collection = 'transaksi';
-  bool _isEditMode = false;
+  final String _collection = 'transaksi'; // Nama koleksi di Firestore.
+  bool _isEditMode = false; // Status untuk mode edit (mengubah/menghapus transaksi).
 
   @override
   void initState() {
     super.initState();
+    // Menginisialisasi format tanggal untuk locali 'id_ID'.
     initializeDateFormatting('id_ID', null);
   }
 
+  // Fungsi untuk menambahkan transaksi baru ke Firestore.
   Future<void> _addTransaction(
       double amount, String description, DateTime date, bool isIncome) async {
     final user = _auth.currentUser;
-    if (user == null) return;
+    if (user == null) return; // Pastikan pengguna sudah login.
 
     await _firestore.collection(_collection).add({
       'amount': amount,
       'description': description,
       'date': Timestamp.fromDate(date),
       'isIncome': isIncome,
-      'userId': user.uid,
+      'userId': user.uid, // Simpan ID pengguna untuk filter data.
     });
   }
 
+  // Fungsi untuk memperbarui data transaksi yang ada.
   Future<void> _updateTransaction(
       String id, double amount, String description, DateTime date) async {
     await _firestore.collection(_collection).doc(id).update({
@@ -78,14 +84,17 @@ class FinancePageState extends State<FinancePage> {
     });
   }
 
+  // Fungsi untuk menghapus transaksi dari Firestore.
   Future<void> _deleteTransaction(String id) async {
     await _firestore.collection(_collection).doc(id).delete();
   }
 
+  // Fungsi untuk mereset saldo: menghapus semua transaksi dan membuat saldo awal baru.
   Future<void> _resetBalance() async {
     final user = _auth.currentUser;
     if (user == null) return;
 
+    // Ambil semua transaksi pengguna saat ini.
     final snapshot = await _firestore
         .collection(_collection)
         .where('userId', isEqualTo: user.uid)
@@ -93,6 +102,7 @@ class FinancePageState extends State<FinancePage> {
     double totalIncome = 0;
     double totalExpense = 0;
 
+    // Hitung total pemasukan dan pengeluaran.
     for (var doc in snapshot.docs) {
       final data = doc.data();
       if (data['isIncome']) {
@@ -102,12 +112,15 @@ class FinancePageState extends State<FinancePage> {
       }
     }
 
+    // Hitung saldo akhir.
     final closingBalance = totalIncome - totalExpense;
 
+    // Hapus semua transaksi yang ada.
     for (var doc in snapshot.docs) {
       await doc.reference.delete();
     }
 
+    // Jika ada sisa saldo, buat transaksi baru sebagai "Saldo Awal".
     if (closingBalance != 0) {
       await _addTransaction(
         closingBalance.abs(),
@@ -118,6 +131,7 @@ class FinancePageState extends State<FinancePage> {
     }
   }
 
+  // Menampilkan dialog konfirmasi sebelum mereset saldo.
   Future<void> _showResetConfirmationDialog() async {
     return showDialog<void>(
       context: context,
@@ -154,6 +168,7 @@ class FinancePageState extends State<FinancePage> {
     );
   }
 
+  // Menampilkan dialog untuk menambah atau mengubah transaksi.
   Future<void> _showTransactionDialog(
       {Transaction? transaction, bool isIncome = true}) async {
     final formKey = GlobalKey<FormState>();
@@ -175,6 +190,7 @@ class FinancePageState extends State<FinancePage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Input untuk jumlah uang.
                 TextFormField(
                   controller: amountController,
                   decoration: const InputDecoration(labelText: 'Jumlah Uang'),
@@ -189,6 +205,7 @@ class FinancePageState extends State<FinancePage> {
                     return null;
                   },
                 ),
+                // Input untuk keterangan transaksi.
                 TextFormField(
                   controller: descriptionController,
                   decoration: const InputDecoration(labelText: 'Keterangan'),
@@ -200,6 +217,7 @@ class FinancePageState extends State<FinancePage> {
                   },
                 ),
                 const SizedBox(height: 10),
+                // Tombol untuk memilih tanggal.
                 StatefulBuilder(
                   builder: (BuildContext context, StateSetter setState) {
                     return TextButton(
@@ -231,6 +249,7 @@ class FinancePageState extends State<FinancePage> {
             ),
             ElevatedButton(
               onPressed: () {
+                // Validasi form sebelum menyimpan.
                 if (formKey.currentState!.validate()) {
                   final amount = double.parse(amountController.text);
                   final description = descriptionController.text;
@@ -249,11 +268,14 @@ class FinancePageState extends State<FinancePage> {
       },
     );
 
+    // Jika dialog menghasilkan data, tambahkan atau perbarui transaksi.
     if (result != null) {
       if (transaction == null) {
+        // Tambah transaksi baru.
         await _addTransaction(
             result['amount'], result['description'], result['date'], isIncome);
       } else {
+        // Perbarui transaksi yang ada.
         await _updateTransaction(transaction.id, result['amount'],
             result['description'], result['date']);
       }
@@ -262,6 +284,7 @@ class FinancePageState extends State<FinancePage> {
 
   @override
   Widget build(BuildContext context) {
+    // StreamBuilder untuk memantau status otentikasi pengguna.
     return StreamBuilder<User?>(
       stream: _auth.authStateChanges(),
       builder: (context, snapshot) {
@@ -271,6 +294,7 @@ class FinancePageState extends State<FinancePage> {
           );
         }
 
+        // Jika pengguna belum login, tampilkan pesan.
         if (!snapshot.hasData) {
           return Scaffold(
             appBar: AppBar(
@@ -292,6 +316,7 @@ class FinancePageState extends State<FinancePage> {
             backgroundColor: const Color(0xFF256EFB),
             foregroundColor: Colors.white,
             actions: [
+              // Tombol untuk beralih antara mode lihat dan mode edit.
               IconButton(
                 icon: Icon(_isEditMode ? Icons.done : Icons.edit),
                 onPressed: () {
@@ -302,6 +327,7 @@ class FinancePageState extends State<FinancePage> {
               ),
             ],
           ),
+          // StreamBuilder untuk mendapatkan data transaksi dari Firestore secara real-time.
           body: StreamBuilder<QuerySnapshot>(
             stream: _firestore
                 .collection(_collection)
@@ -318,11 +344,13 @@ class FinancePageState extends State<FinancePage> {
                     child: Text('Error: ${transactionSnapshot.error}'));
               }
 
+              // Ubah data dari Firestore menjadi daftar objek Transaction.
               final transactions = transactionSnapshot.data?.docs
                       .map((doc) => Transaction.fromFirestore(doc))
                       .toList() ??
                   [];
 
+              // Hitung total pemasukan, pengeluaran, dan saldo sisa.
               double totalIncome = transactions
                   .where((t) => t.isIncome)
                   .fold(0, (total, item) => total + item.amount);
@@ -333,10 +361,11 @@ class FinancePageState extends State<FinancePage> {
 
               return Column(
                 children: [
+                  // Kartu ringkasan keuangan.
                   _buildSummaryCard(totalIncome, totalExpense, balance),
                   Expanded(
                     child: transactions.isEmpty
-                        ? _buildEmptyState()
+                        ? _buildEmptyState() // Tampilan jika tidak ada transaksi.
                         : Column(
                             children: [
                               Padding(
@@ -348,6 +377,7 @@ class FinancePageState extends State<FinancePage> {
                                       fontWeight: FontWeight.bold),
                                 ),
                               ),
+                              // Daftar transaksi yang dikelompokkan per bulan.
                               Expanded(
                                   child: _buildGroupedTransactionList(
                                       transactions)),
@@ -358,6 +388,7 @@ class FinancePageState extends State<FinancePage> {
               );
             },
           ),
+          // Tombol apung untuk menambah pemasukan dan pengeluaran.
           floatingActionButton: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -381,8 +412,10 @@ class FinancePageState extends State<FinancePage> {
     );
   }
 
+  // Widget untuk menampilkan kartu ringkasan keuangan.
   Widget _buildSummaryCard(
       double totalIncome, double totalExpense, double balance) {
+    // Formatter untuk menampilkan mata uang Rupiah.
     final currencyFormatter =
         NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ');
 
@@ -398,6 +431,7 @@ class FinancePageState extends State<FinancePage> {
                 Text('Ringkasan Keuangan',
                     style: GoogleFonts.poppins(
                         fontSize: 18, fontWeight: FontWeight.bold)),
+                // Tombol untuk mereset saldo.
                 IconButton(
                   icon: Icon(Icons.cleaning_services,
                       color: Theme.of(context).primaryColor),
@@ -407,6 +441,7 @@ class FinancePageState extends State<FinancePage> {
               ],
             ),
             const SizedBox(height: 10),
+            // Menampilkan total pemasukan.
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -416,6 +451,7 @@ class FinancePageState extends State<FinancePage> {
               ],
             ),
             const SizedBox(height: 5),
+            // Menampilkan total pengeluaran.
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -425,6 +461,7 @@ class FinancePageState extends State<FinancePage> {
               ],
             ),
             const Divider(height: 20),
+            // Menampilkan saldo sisa.
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -440,8 +477,10 @@ class FinancePageState extends State<FinancePage> {
     );
   }
 
+  // Widget untuk membangun daftar transaksi yang dikelompokkan berdasarkan bulan.
   Widget _buildGroupedTransactionList(List<Transaction> transactions) {
     final Map<String, List<Transaction>> groupedTransactions = {};
+    // Kelompokkan transaksi berdasarkan bulan dan tahun.
     for (var tx in transactions) {
       String monthYear = DateFormat('MMMM yyyy', 'id_ID').format(tx.date);
       if (groupedTransactions[monthYear] == null) {
@@ -450,6 +489,7 @@ class FinancePageState extends State<FinancePage> {
       groupedTransactions[monthYear]!.add(tx);
     }
 
+    // Urutkan bulan dari yang terbaru ke yang terlama.
     final sortedMonths = groupedTransactions.keys.toList()
       ..sort((a, b) {
         DateTime dateA = DateFormat('MMMM yyyy', 'id_ID').parse(a);
@@ -463,6 +503,7 @@ class FinancePageState extends State<FinancePage> {
         final month = sortedMonths[index];
         final monthlyTransactions = groupedTransactions[month]!;
 
+        // Gunakan ExpansionTile untuk setiap bulan.
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           elevation: 2.0,
@@ -471,7 +512,7 @@ class FinancePageState extends State<FinancePage> {
               month,
               style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
             ),
-            initiallyExpanded: index == 0, // Expand the latest month
+            initiallyExpanded: index == 0, // Buka bulan terbaru secara default.
             children: monthlyTransactions.map((tx) {
               final currencyFormatter =
                   NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ');
@@ -480,11 +521,13 @@ class FinancePageState extends State<FinancePage> {
               final amountString = (isIncome ? '+ ' : '- ') +
                   currencyFormatter.format(tx.amount);
 
+              // Tampilkan setiap transaksi dalam ListTile.
               return ListTile(
                   title: Text(tx.description, style: GoogleFonts.poppins()),
                   subtitle: Text(dateFormatter.format(tx.date),
                       style: GoogleFonts.poppins()),
                   trailing: _isEditMode
+                      // Jika mode edit, tampilkan tombol edit dan hapus.
                       ? Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -499,6 +542,7 @@ class FinancePageState extends State<FinancePage> {
                             ),
                           ],
                         )
+                      // Jika tidak, tampilkan jumlah transaksi.
                       : Text(
                           amountString,
                           style: GoogleFonts.poppins(
@@ -513,6 +557,7 @@ class FinancePageState extends State<FinancePage> {
     );
   }
 
+  // Widget yang ditampilkan jika tidak ada transaksi.
   Widget _buildEmptyState() {
     return Center(
       child: Column(

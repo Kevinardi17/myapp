@@ -1,5 +1,3 @@
-// lib/auth_page.dart
-
 import 'package:flutter/material.dart';
 // Mengimpor halaman login.
 import 'login_page.dart';

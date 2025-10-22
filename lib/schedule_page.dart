@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'dart:developer' as developer;
 
+// Widget utama untuk halaman jadwal.
 class SchedulePage extends StatefulWidget {
   const SchedulePage({super.key});
 
@@ -13,20 +14,25 @@ class SchedulePage extends StatefulWidget {
 }
 
 class _SchedulePageState extends State<SchedulePage> {
+  // Instance untuk berinteraksi dengan Firestore dan Authentication.
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  // Status untuk mode edit (mengubah/menghapus jadwal).
   bool _isEditMode = false;
 
+  // Mendapatkan stream data jadwal dari Firestore untuk pengguna yang sedang login.
   Stream<QuerySnapshot> _getSchedules() {
     final User? user = _auth.currentUser;
     developer.log('Getting schedules for user: ${user?.uid}', name: 'SchedulePage');
     if (user != null) {
+      // Mengembalikan stream dari koleksi 'schedule' yang difilter berdasarkan userId.
       return _firestore
           .collection('schedule')
           .where('userId', isEqualTo: user.uid)
           .snapshots();
     }
     developer.log('No user logged in, returning empty stream.', name: 'SchedulePage');
+    // Mengembalikan stream kosong jika tidak ada pengguna yang login.
     return const Stream.empty();
   }
 
@@ -38,6 +44,7 @@ class _SchedulePageState extends State<SchedulePage> {
         backgroundColor: const Color(0xFF256EFB),
         foregroundColor: Colors.white,
         actions: [
+          // Tombol untuk mengaktifkan atau menonaktifkan mode edit.
           IconButton(
             icon: Icon(_isEditMode ? Icons.check : Icons.edit),
             tooltip: _isEditMode ? 'Selesai Edit' : 'Mode Edit',
@@ -49,6 +56,7 @@ class _SchedulePageState extends State<SchedulePage> {
           ),
         ],
       ),
+      // Menggunakan StreamBuilder untuk menampilkan data jadwal secara real-time.
       body: StreamBuilder<QuerySnapshot>(
         stream: _getSchedules(),
         builder: (context, snapshot) {
@@ -61,6 +69,7 @@ class _SchedulePageState extends State<SchedulePage> {
             developer.log('StreamBuilder is waiting for data...', name: 'SchedulePage');
             return const Center(child: CircularProgressIndicator());
           }
+          // Tampilan jika tidak ada data jadwal.
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             developer.log('No schedule data found for the user.', name: 'SchedulePage');
             return Center(
@@ -92,16 +101,19 @@ class _SchedulePageState extends State<SchedulePage> {
           }
 
           developer.log('StreamBuilder has data with ${snapshot.data!.docs.length} documents.', name: 'SchedulePage');
+          // Kelompokkan dan urutkan jadwal berdasarkan hari.
           final schedules = _groupAndSortSchedules(snapshot.data!.docs);
           final days = schedules.keys.toList()
             ..sort((a, b) => _dayOrder[a]! - _dayOrder[b]!);
 
+          // Tampilkan daftar jadwal per hari.
           return ListView.builder(
             padding: const EdgeInsets.all(16.0),
             itemCount: days.length,
             itemBuilder: (context, index) {
               final day = days[index];
               final daySchedules = schedules[day]!;
+              // Menggunakan widget kustom untuk setiap hari.
               return ScheduleDayCard(
                 day: day,
                 schedules: daySchedules,
@@ -114,6 +126,7 @@ class _SchedulePageState extends State<SchedulePage> {
           );
         },
       ),
+      // Tombol apung untuk menambah jadwal baru.
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showScheduleDialog(),
         backgroundColor: const Color(0xFF256EFB),
@@ -122,6 +135,7 @@ class _SchedulePageState extends State<SchedulePage> {
     );
   }
 
+  // Fungsi untuk mengelompokkan jadwal berdasarkan hari dan mengurutkannya berdasarkan jam mulai.
   Map<String, List<DocumentSnapshot>> _groupAndSortSchedules(
       List<DocumentSnapshot> docs) {
     final Map<String, List<DocumentSnapshot>> schedules = {};
@@ -134,6 +148,7 @@ class _SchedulePageState extends State<SchedulePage> {
       }
     }
 
+    // Urutkan jadwal dalam setiap hari berdasarkan jam mulai.
     schedules.forEach((day, scheduleList) {
       scheduleList.sort((a, b) {
         final timeA = _timeOfDayFromString(a['jam_mulai']);
@@ -147,6 +162,7 @@ class _SchedulePageState extends State<SchedulePage> {
     return schedules;
   }
 
+  // Map untuk menentukan urutan hari dalam seminggu.
   final Map<String, int> _dayOrder = {
     'Senin': 1,
     'Selasa': 2,
@@ -157,6 +173,7 @@ class _SchedulePageState extends State<SchedulePage> {
     'Minggu': 7,
   };
 
+  // Menampilkan dialog dengan detail lengkap dari sebuah jadwal.
   void _showScheduleDetails(DocumentSnapshot schedule) {
     showDialog(
       context: context,
@@ -193,6 +210,7 @@ class _SchedulePageState extends State<SchedulePage> {
     );
   }
 
+  // Menampilkan dialog konfirmasi sebelum menghapus jadwal.
   void _confirmDelete(String docId) {
     showDialog(
       context: context,
@@ -207,6 +225,7 @@ class _SchedulePageState extends State<SchedulePage> {
             ),
             TextButton(
               onPressed: () {
+                // Hapus dokumen dari Firestore.
                 _firestore.collection('schedule').doc(docId).delete();
                 Navigator.of(context).pop();
               },
@@ -218,6 +237,7 @@ class _SchedulePageState extends State<SchedulePage> {
     );
   }
 
+  // Menampilkan dialog untuk menambah atau mengedit jadwal.
   void _showScheduleDialog({DocumentSnapshot? schedule}) {
     final formKey = GlobalKey<FormState>();
     String? namaMatkul = schedule?['nama_matkul'];
@@ -242,6 +262,7 @@ class _SchedulePageState extends State<SchedulePage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Input untuk nama mata kuliah.
                       TextFormField(
                         initialValue: namaMatkul,
                         decoration: const InputDecoration(
@@ -250,6 +271,7 @@ class _SchedulePageState extends State<SchedulePage> {
                             value!.isEmpty ? 'Tidak boleh kosong' : null,
                         onSaved: (value) => namaMatkul = value,
                       ),
+                      // Dropdown untuk memilih hari.
                       DropdownButtonFormField<String>(
                         initialValue: hari,
                         decoration: const InputDecoration(labelText: 'Hari'),
@@ -265,6 +287,7 @@ class _SchedulePageState extends State<SchedulePage> {
                         validator: (value) =>
                             value == null ? 'Pilih hari' : null,
                       ),
+                      // Input untuk jam mulai.
                       ListTile(
                         title: const Text('Jam Mulai'),
                         subtitle:
@@ -281,6 +304,7 @@ class _SchedulePageState extends State<SchedulePage> {
                           }
                         },
                       ),
+                      // Input untuk jam selesai.
                       ListTile(
                         title: const Text('Jam Selesai'),
                         subtitle:
@@ -297,6 +321,7 @@ class _SchedulePageState extends State<SchedulePage> {
                           }
                         },
                       ),
+                      // Input untuk lokasi.
                       TextFormField(
                         initialValue: lokasi,
                         decoration: const InputDecoration(labelText: 'Lokasi'),
@@ -304,6 +329,7 @@ class _SchedulePageState extends State<SchedulePage> {
                             value!.isEmpty ? 'Tidak boleh kosong' : null,
                         onSaved: (value) => lokasi = value,
                       ),
+                      // Input untuk nama dosen (opsional).
                       TextFormField(
                         initialValue: namaDosen,
                         decoration: const InputDecoration(
@@ -323,9 +349,11 @@ class _SchedulePageState extends State<SchedulePage> {
             ),
             ElevatedButton(
               onPressed: () {
+                // Validasi form sebelum menyimpan.
                  if (formKey.currentState!.validate()) {
                   formKey.currentState!.save();
 
+                  // Pastikan jam mulai dan selesai sudah dipilih.
                   if (jamMulai == null || jamSelesai == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -339,6 +367,7 @@ class _SchedulePageState extends State<SchedulePage> {
                   final User? user = _auth.currentUser;
                   final localizations = MaterialLocalizations.of(context);
                   if (user != null) {
+                    // Siapkan data untuk disimpan ke Firestore.
                     final data = {
                       'userId': user.uid,
                       'nama_matkul': namaMatkul,
@@ -350,6 +379,7 @@ class _SchedulePageState extends State<SchedulePage> {
                       'lokasi': lokasi,
                       'nama_dosen': namaDosen,
                     };
+                    // Jika ini jadwal baru, tambahkan. Jika tidak, perbarui.
                     if (schedule == null) {
                       _firestore.collection('schedule').add(data);
                     } else {
@@ -370,20 +400,23 @@ class _SchedulePageState extends State<SchedulePage> {
     );
   }
 
+  // Fungsi utilitas untuk mengubah string waktu (HH:mm) menjadi objek TimeOfDay.
   TimeOfDay _timeOfDayFromString(String timeString) {
     try {
       return TimeOfDay.fromDateTime(DateFormat.Hm().parse(timeString));
     } catch (_) {
       try {
+        // Coba format lain jika format pertama gagal.
         return TimeOfDay.fromDateTime(DateFormat.jm().parse(timeString));
       } catch (e) {
+        // Kembalikan nilai default jika semua format gagal.
         return const TimeOfDay(hour: 0, minute: 0);
       }
     }
   }
 }
 
-// Widget baru yang Stateful untuk setiap kartu hari
+// Widget kustom yang Stateful untuk setiap kartu hari.
 class ScheduleDayCard extends StatefulWidget {
   final String day;
   final List<DocumentSnapshot> schedules;
@@ -407,6 +440,7 @@ class ScheduleDayCard extends StatefulWidget {
 }
 
 class _ScheduleDayCardState extends State<ScheduleDayCard> {
+  // Status untuk mengontrol apakah kartu sedang diperluas atau tidak.
   bool _isExpanded = false;
 
   @override
@@ -420,6 +454,7 @@ class _ScheduleDayCardState extends State<ScheduleDayCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Bagian header kartu yang dapat diklik untuk expand/collapse.
           InkWell(
             onTap: () {
               setState(() {
@@ -444,6 +479,7 @@ class _ScheduleDayCardState extends State<ScheduleDayCard> {
             ),
           ),
           const Divider(height: 1, thickness: 1),
+          // Animasi transisi antara tampilan collapsed dan expanded.
           AnimatedCrossFade(
             duration: const Duration(milliseconds: 300),
             crossFadeState: _isExpanded
@@ -463,6 +499,7 @@ class _ScheduleDayCardState extends State<ScheduleDayCard> {
     );
   }
 
+  // Tampilan kartu saat dalam keadaan collapsed (hanya menampilkan jadwal pertama).
   Widget _buildCollapsedView() {
     return Column(
       children: [
@@ -481,6 +518,7 @@ class _ScheduleDayCardState extends State<ScheduleDayCard> {
     );
   }
 
+  // Tampilan kartu saat dalam keadaan expanded (menampilkan semua jadwal).
   Widget _buildExpandedView() {
     return Column(
       children: widget.schedules
@@ -489,6 +527,7 @@ class _ScheduleDayCardState extends State<ScheduleDayCard> {
     );
   }
 
+  // Widget untuk menampilkan satu baris jadwal (satu mata kuliah).
   ListTile _buildScheduleTile(DocumentSnapshot schedule) {
     return ListTile(
       title: Text(
@@ -501,6 +540,7 @@ class _ScheduleDayCardState extends State<ScheduleDayCard> {
         '${schedule['jam_mulai']} - ${schedule['jam_selesai']}\n${schedule['lokasi']}',
         style: GoogleFonts.poppins(),
       ),
+      // Menampilkan tombol edit dan hapus jika dalam mode edit.
       trailing: widget.isEditMode
           ? Row(
               mainAxisSize: MainAxisSize.min,
@@ -517,6 +557,7 @@ class _ScheduleDayCardState extends State<ScheduleDayCard> {
               ],
             )
           : null,
+      // Menampilkan detail jadwal saat di-tap.
       onTap: () => widget.showScheduleDetails(schedule),
     );
   }

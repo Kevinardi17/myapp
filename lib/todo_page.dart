@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+// Widget utama untuk halaman To-Do List.
 class TodoPage extends StatefulWidget {
   const TodoPage({super.key});
 
@@ -12,18 +13,21 @@ class TodoPage extends StatefulWidget {
 }
 
 class TodoPageState extends State<TodoPage> {
+  // Instance untuk berinteraksi dengan Firestore dan Authentication.
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  User? _user;
-  String _selectedCategory = 'Semua';
-  bool _isEditMode = false;
+  User? _user; // Menyimpan informasi pengguna yang sedang login.
+  String _selectedCategory = 'Semua'; // Kategori yang sedang dipilih untuk filter.
+  bool _isEditMode = false; // Status untuk mode edit (mengubah/menghapus tugas).
 
   @override
   void initState() {
     super.initState();
+    // Mendapatkan pengguna yang saat ini login saat widget pertama kali dibuat.
     _user = _auth.currentUser;
   }
 
+  // Menampilkan dialog dengan detail lengkap dari sebuah tugas.
   void _showTaskDetailsDialog(DocumentSnapshot task) {
     final deadline = task['tenggat_waktu'] as Timestamp?;
     showDialog(
@@ -55,6 +59,7 @@ class TodoPageState extends State<TodoPage> {
     );
   }
 
+  // Menampilkan dialog untuk menambah atau mengubah tugas.
   void _showAddTaskDialog({DocumentSnapshot? task}) {
     final TextEditingController titleController =
         TextEditingController(text: task != null ? task['judul'] : '');
@@ -69,6 +74,7 @@ class TodoPageState extends State<TodoPage> {
       context: context,
       builder: (context) {
         return StatefulBuilder(builder: (context, setState) {
+          // Menyesuaikan judul dan label berdasarkan apakah ini tugas baru atau edit, dan kategorinya.
           String dialogTitle = task == null
               ? (category == 'Wishlist' ? 'Tambah Wishlist' : 'Tambah Tugas')
               : 'Ubah Tugas';
@@ -82,10 +88,12 @@ class TodoPageState extends State<TodoPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Input untuk judul.
                   TextField(
                     controller: titleController,
                     decoration: InputDecoration(labelText: titleLabel),
                   ),
+                  // Dropdown untuk memilih kategori.
                   DropdownButtonFormField<String>(
                     initialValue: category,
                     decoration: const InputDecoration(labelText: 'Kategori'),
@@ -96,11 +104,13 @@ class TodoPageState extends State<TodoPage> {
                             ))
                         .toList(),
                     onChanged: (value) {
+                      // Perbarui state dialog saat kategori berubah.
                       setState(() {
                         category = value!;
                       });
                     },
                   ),
+                  // Input untuk tenggat waktu (tidak ditampilkan untuk kategori 'Pribadi').
                   if (category != 'Pribadi')
                     ListTile(
                       title: Text(deadline == null
@@ -108,6 +118,7 @@ class TodoPageState extends State<TodoPage> {
                           : DateFormat('dd/MM/yyyy HH:mm').format(deadline!)),
                       trailing: const Icon(Icons.calendar_today),
                       onTap: () async {
+                        // Menampilkan date picker.
                         final pickedDate = await showDatePicker(
                           context: context,
                           initialDate: deadline ?? DateTime.now(),
@@ -116,6 +127,7 @@ class TodoPageState extends State<TodoPage> {
                         );
                         if (pickedDate != null) {
                           if (!mounted) return;
+                          // Menampilkan time picker setelah tanggal dipilih.
                           final pickedTime = await showTimePicker(
                             // ignore: use_build_context_synchronously
                             context: context,
@@ -136,6 +148,7 @@ class TodoPageState extends State<TodoPage> {
                         }
                       },
                     ),
+                  // Input untuk deskripsi (opsional).
                   TextField(
                     controller: descriptionController,
                     decoration: const InputDecoration(
@@ -151,9 +164,11 @@ class TodoPageState extends State<TodoPage> {
               ),
               ElevatedButton(
                 onPressed: () {
+                  // Validasi bahwa judul tidak kosong.
                   if (titleController.text.isNotEmpty) {
                     final deadlineToSave =
                         category == 'Pribadi' ? null : deadline;
+                    // Jika tugas baru, tambahkan ke Firestore. Jika tidak, perbarui.
                     if (task == null) {
                       _firestore.collection('ToDo_Item').add({
                         'userId': _user!.uid,
@@ -191,6 +206,7 @@ class TodoPageState extends State<TodoPage> {
         backgroundColor: const Color(0xFF256EFB),
         foregroundColor: Colors.white,
         actions: [
+          // Tombol untuk beralih mode edit.
           IconButton(
             icon: Icon(_isEditMode ? Icons.done : Icons.edit),
             onPressed: () {
@@ -203,10 +219,13 @@ class TodoPageState extends State<TodoPage> {
       ),
       body: Column(
         children: [
+          // Filter kategori di bagian atas.
           _buildCategoryFilter(),
+          // Daftar tugas yang memenuhi filter.
           Expanded(child: _buildTodoList()),
         ],
       ),
+      // Tombol apung untuk menambah tugas baru.
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddTaskDialog(),
         backgroundColor: const Color(0xFF256EFB),
@@ -215,6 +234,7 @@ class TodoPageState extends State<TodoPage> {
     );
   }
 
+  // Widget untuk menampilkan filter kategori dalam bentuk chip.
   Widget _buildCategoryFilter() {
     return Container(
       padding: const EdgeInsets.all(8.0),
@@ -264,6 +284,7 @@ class TodoPageState extends State<TodoPage> {
     );
   }
 
+  // Membangun daftar tugas menggunakan StreamBuilder untuk data real-time.
   Widget _buildTodoList() {
     if (_user == null) {
       return const Center(child: Text("Silakan login terlebih dahulu."));
@@ -287,6 +308,7 @@ class TodoPageState extends State<TodoPage> {
         List<DocumentSnapshot> uncompletedToShow;
         List<DocumentSnapshot> completedToShow;
 
+        // Filter tugas berdasarkan kategori yang dipilih.
         if (_selectedCategory == 'Semua') {
           uncompletedToShow = allTasks
               .where((task) => !(task['status_selesai'] as bool))
@@ -306,6 +328,7 @@ class TodoPageState extends State<TodoPage> {
               .toList();
         }
 
+        // Tampilan jika tidak ada tugas dalam kategori yang dipilih.
         if (_selectedCategory != 'Semua' &&
             uncompletedToShow.isEmpty &&
             completedToShow.isEmpty) {
@@ -317,6 +340,7 @@ class TodoPageState extends State<TodoPage> {
           );
         }
 
+        // Tampilkan daftar tugas yang belum selesai dan yang sudah selesai.
         return ListView(
           children: [
             _buildTaskList(uncompletedToShow, 'Tugas'),
@@ -330,9 +354,10 @@ class TodoPageState extends State<TodoPage> {
     );
   }
 
+  // Widget untuk membangun daftar tugas (baik yang selesai maupun yang belum).
   Widget _buildTaskList(List<DocumentSnapshot> tasks, String title) {
     if (tasks.isEmpty) {
-      // Don't show anything if the list is empty, the parent widget will handle the "no tasks" message.
+      // Jangan tampilkan apa pun jika daftar kosong, widget induk akan menanganinya.
       return const SizedBox.shrink();
     }
     return Column(
@@ -355,9 +380,11 @@ class TodoPageState extends State<TodoPage> {
             final deadline = task['tenggat_waktu'] as Timestamp?;
             final isCompleted = task['status_selesai'] as bool;
 
+            // Setiap tugas ditampilkan dalam sebuah Card dengan ListTile.
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               child: ListTile(
+                // Checkbox untuk mengubah status selesai.
                 leading: Checkbox(
                   value: isCompleted,
                   onChanged: (value) {
@@ -367,6 +394,7 @@ class TodoPageState extends State<TodoPage> {
                         .update({'status_selesai': value});
                   },
                 ),
+                // Judul tugas.
                 title: Text(
                   task['judul'],
                   style: TextStyle(
@@ -376,6 +404,7 @@ class TodoPageState extends State<TodoPage> {
                     color: isCompleted ? Colors.grey : Colors.black,
                   ),
                 ),
+                // Subtitle menampilkan kategori dan tenggat waktu.
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -386,6 +415,7 @@ class TodoPageState extends State<TodoPage> {
                       ),
                   ],
                 ),
+                // Menampilkan tombol edit dan hapus jika dalam mode edit.
                 trailing: _isEditMode
                     ? Row(
                         mainAxisSize: MainAxisSize.min,
@@ -406,6 +436,7 @@ class TodoPageState extends State<TodoPage> {
                         ],
                       )
                     : null,
+                // Menampilkan detail tugas saat di-tap (jika tidak dalam mode edit).
                 onTap: () {
                   if (!_isEditMode) {
                     _showTaskDetailsDialog(task);

@@ -26,7 +26,6 @@ class ProfilePage extends StatelessWidget {
         title: const Text("Profil Pengguna"),
         backgroundColor: const Color(0xFF256EFB), // Warna primer
         foregroundColor: Colors.white, // Warna teks
-        // Tidak ada actions di AppBar lagi
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),

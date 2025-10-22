@@ -1,5 +1,3 @@
-// lib/auth_gate.dart
-
 // Mengimpor pustaka Firebase Authentication untuk mengakses status login pengguna.
 import 'package:firebase_auth/firebase_auth.dart';
 // Mengimpor pustaka dasar Flutter.

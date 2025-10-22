@@ -1,5 +1,3 @@
-// lib/main.dart
-
 // Mengimpor pustaka dasar dari Flutter untuk membangun UI.
 import 'package:flutter/material.dart';
 // Mengimpor pustaka Firebase Core untuk menghubungkan aplikasi dengan Firebase.

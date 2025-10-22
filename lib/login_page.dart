@@ -1,13 +1,12 @@
 // lib/login_page.dart
 
-// Mengimpor pustaka Firebase Authentication untuk proses login.
+// Mengimpor pustaka Firebase Authentication untuk autentikasi pengguna.
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class LoginPage extends StatefulWidget {
-  // 'onTap' adalah sebuah fungsi yang diterima dari AuthPage.
-  // Fungsi ini akan dipanggil ketika pengguna menekan teks "Daftar sekarang".
+  // Callback dari AuthPage untuk navigasi ke halaman registrasi saat "Daftar sekarang" ditekan.
   final VoidCallback onTap;
   const LoginPage({super.key, required this.onTap});
 
@@ -16,36 +15,36 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // Controller untuk mengambil teks dari kolom input email dan password.
+  // Controller untuk mengambil input dari kolom email dan password.
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  // Method untuk menangani proses sign in (masuk).
+  // Fungsi untuk menangani proses login pengguna.
   Future<void> signIn() async {
-    // Menampilkan dialog loading (lingkaran berputar) agar pengguna tahu proses sedang berjalan.
+    // Menampilkan indikator loading selama proses autentikasi berlangsung.
     showDialog(
       context: context,
-      barrierDismissible: false, // Pengguna tidak bisa menutup dialog ini
+      barrierDismissible: false, // Mencegah pengguna menutup dialog secara manual.
       builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     try {
-      // Mencoba untuk login menggunakan email dan password yang diinput pengguna.
+      // Melakukan autentikasi ke Firebase menggunakan email dan password yang dimasukkan pengguna.
       await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(), // .trim() untuk menghapus spasi di awal/akhir
+        email: _emailController.text.trim(), // Menghapus spasi berlebih.
         password: _passwordController.text.trim(),
       );
-      // Jika login berhasil, tutup semua halaman di atasnya sampai kembali ke halaman pertama (AuthGate).
-      // AuthGate kemudian akan otomatis mengarahkan ke HomePage.
+
+      // Jika login berhasil, tutup semua halaman hingga kembali ke halaman utama (AuthGate).
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } on FirebaseAuthException catch (e) {
-      // Jika terjadi error dari Firebase (misal: password salah).
+      // Jika terjadi error dari Firebase (misalnya email tidak ditemukan atau password salah).
       if (!mounted) return;
-      // Hentikan dialog loading terlebih dahulu.
-      Navigator.pop(context);
-      // Tampilkan pesan error kepada pengguna menggunakan SnackBar.
+      Navigator.pop(context); // Menutup dialog loading.
+      
+      // Menampilkan pesan error menggunakan SnackBar.
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message ?? "Login Gagal")),
       );
@@ -55,53 +54,53 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
+      extendBodyBehindAppBar: true, // Membuat body berada di belakang AppBar.
       appBar: AppBar(
-        // Tombol kembali
+        // AppBar transparan dengan ikon kembali ke halaman sebelumnya.
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            Navigator.pop(context); // Kembali ke halaman sebelumnya (WelcomePage)
+            Navigator.pop(context); // Navigasi kembali ke WelcomePage.
           },
         ),
-        backgroundColor: Colors.transparent, // AppBar transparan
-        elevation: 0, // Tidak ada bayangan di bawah AppBar
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
-          child: SingleChildScrollView( // Agar bisa di-scroll jika layar terlalu kecil
+          child: SingleChildScrollView( // Menghindari overflow pada layar kecil.
             padding: const EdgeInsets.symmetric(horizontal: 43.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo dan Judul
+                // Logo aplikasi sebagai elemen branding.
                 Image.asset(
-                  'lib/assets/images/logo.png', // Path gambar
+                  'lib/assets/images/logo.png',
                   width: 127,
                   height: 135,
                 ),
                 const SizedBox(height: 50),
 
-                // Kolom Input Email
+                // Kolom input email.
                 TextField(
-                  controller: _emailController, // Menghubungkan controller
+                  controller: _emailController,
                   decoration: InputDecoration(
                     hintText: 'Email',
                     filled: true,
                     fillColor: Colors.grey[200],
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none, // Tidak ada garis tepi
+                      borderSide: BorderSide.none,
                     ),
                   ),
                 ),
                 const SizedBox(height: 10),
 
-                // Kolom Input Password
+                // Kolom input password dengan teks disembunyikan.
                 TextField(
-                  controller: _passwordController, // Menghubungkan controller
-                  obscureText: true, // Menyembunyikan teks password
+                  controller: _passwordController,
+                  obscureText: true, // Menyembunyikan karakter password.
                   decoration: InputDecoration(
                     hintText: 'Password',
                     filled: true,
@@ -114,14 +113,14 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 30),
 
-                // Tombol Login
+                // Tombol login utama.
                 SizedBox(
                   width: double.infinity,
                   height: 54,
                   child: ElevatedButton(
-                    onPressed: signIn, // Memanggil fungsi signIn saat ditekan
+                    onPressed: signIn, // Menjalankan proses login saat ditekan.
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF256EFB),
+                      backgroundColor: const Color(0xFF256EFB), // Warna utama aplikasi.
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -138,7 +137,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 30),
 
-                // Teks untuk pindah ke halaman Register
+                // Navigasi ke halaman registrasi jika belum memiliki akun.
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -147,9 +146,9 @@ class _LoginPageState extends State<LoginPage> {
                       style: GoogleFonts.poppins(),
                     ),
                     const SizedBox(width: 4),
-                    // GestureDetector membuat widget (dalam hal ini Text) bisa diklik.
+                    // Teks "Daftar sekarang" yang bisa ditekan (tap gesture).
                     GestureDetector(
-                      onTap: widget.onTap, // Memanggil fungsi togglePages dari AuthPage
+                      onTap: widget.onTap, // Memanggil callback dari AuthPage.
                       child: Text(
                         'Daftar sekarang',
                         style: GoogleFonts.poppins(
