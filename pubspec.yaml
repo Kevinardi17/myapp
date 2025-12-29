@@ -1,0 +1,62 @@
+# Nama aplikasi
+#File ini berfungsi sebagai konfigurasi utama proyek Flutter Anda. 
+#Di dalamnya terdapat informasi metadata proyek, versi SDK, dependensi, aset, hingga konfigurasi khusus seperti ikon aplikasi.
+name: kuliahku
+description: "Aplikasi untuk manajemen tugas dan jadwal kuliah."
+
+# Jangan publikasikan ke pub.dev (karena ini proyek pribadi)
+publish_to: 'none'
+
+# Versi aplikasi (format: major.minor.patch+build)
+version: 1.0.0+1
+
+# Versi SDK Dart yang didukung oleh proyek ini
+environment:
+  sdk: '>=3.4.0 <4.0.0' 
+
+dependencies:
+  # Paket utama Flutter
+  flutter:
+    sdk: flutter
+
+  # Firebase Core - paket utama untuk menginisialisasi Firebase
+  firebase_core: ^4.3.0
+
+  # Firebase Auth - untuk fitur autentikasi pengguna (login, register, dsb)
+  firebase_auth: ^6.1.3 
+
+  # Google Fonts - untuk menggunakan font dari Google Fonts
+  google_fonts: ^6.2.1
+
+  # Icon Cupertino (iOS-style icons)
+  cupertino_icons: ^1.0.8
+
+  # Cloud Firestore - untuk menggunakan database realtime dari Firebase
+  cloud_firestore: ^6.1.1
+
+  # intl - untuk format tanggal/waktu, localization, dsb
+  intl: ^0.20.2
+
+dev_dependencies:
+  # Paket untuk testing unit dan widget
+  flutter_test:
+    sdk: flutter
+
+  # Aturan linter untuk menjaga kualitas dan konsistensi kode
+  flutter_lints: ^6.0.0
+
+  # Paket untuk mengatur ikon aplikasi (favicon)
+  flutter_launcher_icons: ^0.14.4
+
+# Konfigurasi plugin 'flutter_launcher_icons'
+flutter_launcher_icons:
+  android: true             # Mengaktifkan generate ikon untuk Android
+  ios: false                # Menonaktifkan ikon iOS (bisa diubah ke true jika dibutuhkan)
+  image_path: "lib/assets/images/logo.png"  # Path ke gambar logo yang digunakan sebagai ikon
+
+flutter:
+  uses-material-design: true  # Mengaktifkan ikon dan tema material design
+
+  assets:
+    # Daftar aset (gambar) yang digunakan dalam aplikasi
+    - lib/assets/images/      # Semua gambar di folder ini akan diakses dalam aplikasi

@@ -1,0 +1,16 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // This single rule applies to any collection
+    match /{collection}/{docId} {
+      // Allow create if the user is logged in and the new document's userId is their own.
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+
+      // Allow read, update, and delete if the user is logged in and is the owner of the document.
+      // This rule correctly allows collection queries like .where('userId', '==', auth.uid)
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+  }
+}
